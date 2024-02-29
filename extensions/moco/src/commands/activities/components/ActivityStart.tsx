@@ -70,9 +70,8 @@ export const ActivityStart: React.FC<ActivityStartProps> = ({ task, projectID })
           {selectedProjectID !== "0"
             ? projects
                 .filter((project) => project.id === parseInt(selectedProjectID!))[0]
-                .tasks.map((task, index) => (
-                  <Form.Dropdown.Item title={task.name} key={index} value={task.id!.toString()} />
-                ))
+                .tasks.filter((task) => task.active)
+                .map((task, index) => <Form.Dropdown.Item title={task.name} key={index} value={task.id!.toString()} />)
             : null}
         </Form.Dropdown>
       ) : null}
