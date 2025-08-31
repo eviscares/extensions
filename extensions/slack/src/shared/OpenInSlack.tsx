@@ -57,7 +57,7 @@ export const OpenChatInSlack = ({
           onOpen={async () => {
             await onAction?.();
             await closeMainWindow();
-            if (closeRightSidebar) {
+            if (closeRightSidebar && process.platform !== "win32") {
               await runAppleScript(
                 buildScriptEnsuringSlackIsRunning(
                   `tell application "System Events" to tell process "Slack" to key code 47 using {command down}`,
@@ -70,8 +70,7 @@ export const OpenChatInSlack = ({
       {conversationId && conversationId.trim().length > 0 && (
         <Action.OpenInBrowser
           url={`https://app.slack.com/client/${workspaceId}/${conversationId}`}
-          title={"Open in Browser"}
-          onOpen={async () => await closeMainWindow()}
+          onOpen={() => closeMainWindow()}
         />
       )}
     </>

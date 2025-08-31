@@ -3,14 +3,16 @@ import type { BlockObjectRequest } from "@notionhq/client/build/src/api-endpoint
 import { type Form, showToast, Toast } from "@raycast/api";
 import { markdownToBlocks } from "@tryfabric/martian";
 
-import { supportedPropTypes } from "..";
+import { isMarkdownPageContent, isReadableProperty } from "..";
 import { handleError, isNotNullOrUndefined, pageMapper } from "../global";
 import { getNotionClient } from "../oauth";
+import { formValueToPropertyValue } from "../page/property";
+import { standardize } from "../standardize";
 
-import { formatDatabaseProperty } from "./property";
-import { DatabaseProperty, DatabasePropertyOption } from "./property";
+import { DatabaseProperty } from "./property";
 
-export type { DatabaseProperty, DatabasePropertyOption };
+export type { PropertyConfig } from "./property";
+export type { DatabaseProperty };
 
 export async function fetchDatabase(pageId: string, silent: boolean = true) {
   try {
@@ -64,43 +66,17 @@ export async function fetchDatabaseProperties(databaseId: string) {
 
     propertyNames.forEach((name) => {
       const property = database.properties[name];
-
-      if (supportedPropTypes.indexOf(property.type) === -1) {
-        return;
-      }
-
-      const databaseProperty = {
-        id: property.id,
-        type: property.type,
-        name: name,
-        options: [],
-      } as DatabaseProperty;
-
-      switch (property.type) {
-        case "select":
-          (databaseProperty.options as DatabasePropertyOption[]).push({
+      if (isReadableProperty(property)) {
+        if (property.type == "select")
+          property.select.options.unshift({
             id: "_select_null_",
             name: "No Selection",
+            color: "default",
+            description: "No selection",
           });
-          databaseProperty.options = (databaseProperty.options as DatabasePropertyOption[]).concat(
-            property.select.options,
-          );
-          break;
-        case "multi_select":
-          databaseProperty.options = property.multi_select.options;
-          break;
-        case "relation":
-          databaseProperty.relation_id = property.relation.database_id;
-          break;
-        case "status":
-          databaseProperty.options.push(
-            ...property.status.groups.flatMap(({ option_ids }) =>
-              option_ids.map((id) => property.status.options.find((option) => option.id == id)!),
-            ),
-          );
-      }
 
-      databaseProperties.push(databaseProperty);
+        databaseProperties.push(standardize(property, "config"));
+      }
     });
 
     return databaseProperties;
@@ -147,7 +123,6 @@ export async function queryDatabase(
 
 type CreateRequest = Parameters<Client["pages"]["create"]>[0];
 
-// Create database page
 export async function createDatabasePage(values: Form.Values) {
   try {
     const notion = getNotionClient();
@@ -159,8 +134,10 @@ export async function createDatabasePage(values: Form.Values) {
     };
 
     if (content) {
-      // casting because converting from the `Block` type in martian to the `BlockObjectRequest` type in notion
-      arg.children = markdownToBlocks(content) as BlockObjectRequest[];
+      arg.children = isMarkdownPageContent(content)
+        ? // casting because converting from the `Block` type in martian to the `BlockObjectRequest` type in notion
+          (markdownToBlocks(content) as BlockObjectRequest[])
+        : content;
     }
 
     Object.keys(props).forEach((formId) => {
@@ -171,7 +148,7 @@ export async function createDatabasePage(values: Form.Values) {
       if (value == "_select_null_") return;
       if (!propId || !value) return;
 
-      const formatted = formatDatabaseProperty(type, value);
+      const formatted = formValueToPropertyValue(type, value);
       if (formatted) arg.properties[propId] = formatted;
     });
 

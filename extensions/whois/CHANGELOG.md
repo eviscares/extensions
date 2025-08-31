@@ -1,6 +1,17 @@
 # Whois Changelog
 
-## [Handle IP Addresses] 2023-10-18
+## [Windows Support] - 2025-08-27
+
+- Added support for Windows
+- Updated dependencies
+
+## [Refactoring] - 2024-07-26
+
+- Updated dependencies, removed axios
+- Removed call to deprecated url, replaced with Cloudflare DNS lookup
+- Bugfix (due to deprecated url) for [#13380](https://github.com/raycast/extensions/issues/13380)
+
+## [Handle IP Addresses] - 2023-10-18
 
 - Added ability to handle both domain names and IP addresses as inputs.
 

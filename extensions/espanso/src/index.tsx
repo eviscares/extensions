@@ -1,14 +1,12 @@
-import { Action, ActionPanel, Application, Clipboard, Detail, List, getFrontmostApplication, Icon } from "@raycast/api";
+import type { Application } from "@raycast/api";
+import { Detail, List, getFrontmostApplication } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { ProcessOutput } from "zx";
 import { capitalCase, kebabCase } from "change-case";
-
 import { commandNotFoundMd, noContentMd } from "./content/messages";
-
-import { FormattedMatch } from "./lib/types";
+import type { FormattedMatch } from "./lib/types";
 import { getEspansoConfig, getMatches, sortMatches } from "./lib/utils";
-
 import CategoryDropdown from "./components/category-dropdown";
+import MatchItem from "./components/match-item";
 
 export default function Command() {
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +14,7 @@ export default function Command() {
   const [filteredItems, setFilteredItems] = useState<FormattedMatch[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [error, setError] = useState<ProcessOutput | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [application, setApplication] = useState<Application | undefined>(undefined);
 
   useEffect(() => {
@@ -26,7 +24,7 @@ export default function Command() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { packages: packageFilesDirectory, match: matchFilesDirectory } = await getEspansoConfig();
+        const { packages: packageFilesDirectory, match: matchFilesDirectory } = getEspansoConfig();
 
         const combinedMatches = [
           ...getMatches(packageFilesDirectory, { packagePath: true }),
@@ -36,31 +34,35 @@ export default function Command() {
         const sortedMatches = sortMatches(combinedMatches);
 
         const categoriesSet = new Set<string>();
-        const formattedMatches: FormattedMatch[] = sortedMatches.map((match) => {
-          const pathParts = match.filePath.split("match/")[1]?.split("/") || [];
-          let category = pathParts[0]?.replace(".yml", "") ?? "";
-          let subcategory = pathParts[1]?.replace(".yml", "");
 
-          if (subcategory?.toLowerCase() === "index" || subcategory === category) {
-            subcategory = "";
-          } else {
-            subcategory = kebabCase(subcategory ?? "");
-          }
-
-          category = kebabCase(category);
-          categoriesSet.add(category);
-
-          return {
-            ...match,
-            category,
-            subcategory,
-            triggers: match.triggers,
-            replace: match.replace,
-            form: match.form,
-            label: match.label,
-            filePath: match.filePath,
-          };
-        });
+        const formattedMatches: FormattedMatch[] = sortedMatches
+          .filter((match) => !match.form)
+          .map((match, index) => {
+            let category = match.category;
+            let subcategory = "";
+            if (!category) {
+              const pathParts = match.filePath.split("match/")[1]?.split("/") || [];
+              category = pathParts[0]?.replace(".yml", "") ?? "";
+              subcategory = pathParts[1]?.replace(".yml", "");
+            }
+            if (subcategory?.toLowerCase() === "index" || subcategory === category) {
+              subcategory = "";
+            } else {
+              subcategory = kebabCase(subcategory ?? "");
+            }
+            category = kebabCase(category);
+            categoriesSet.add(category);
+            return {
+              ...match,
+              category,
+              subcategory,
+              triggers: match.triggers,
+              replace: match.replace,
+              label: match.label,
+              filePath: match.filePath,
+              index,
+            };
+          });
 
         const sortedCategories = Array.from(categoriesSet).sort((a, b) => {
           if (a === "base") return -1;
@@ -73,11 +75,10 @@ export default function Command() {
         setCategories(["all", ...sortedCategories]);
         setIsLoading(false);
       } catch (err) {
-        setError(err instanceof ProcessOutput ? err : null);
+        setError(err instanceof Error ? err : null);
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -86,8 +87,8 @@ export default function Command() {
   }, [selectedCategory, items]);
 
   if (error) {
-    const notFound = /command not found/.test(error.stderr);
-    return <Detail markdown={notFound ? commandNotFoundMd : error.stderr} />;
+    const notFound = /command not found/.test(error.message);
+    return <Detail markdown={notFound ? commandNotFoundMd : error.message} />;
   }
 
   if (!isLoading && items.length === 0) {
@@ -137,65 +138,9 @@ export default function Command() {
         const sortedItems = sortItems(sections[sectionKey]);
         return (
           <List.Section key={sectionKey} title={capitalCase(sectionKey)}>
-            {sortedItems.map(({ triggers, replace, form, label, filePath, subcategory }, index) => {
-              const itemKey = `${filePath}-${index}`;
-
-              return (
-                <List.Item
-                  key={itemKey}
-                  title={label ?? triggers.join(", ")}
-                  subtitle={subcategory ? capitalCase(subcategory) : ""}
-                  detail={
-                    <List.Item.Detail
-                      markdown={form ? "`form` is not supported yet." : replace}
-                      metadata={
-                        <List.Item.Detail.Metadata>
-                          <List.Item.Detail.Metadata.TagList title="Triggers">
-                            {triggers.map((trigger: string) => (
-                              <List.Item.Detail.Metadata.TagList.Item key={trigger} text={trigger} color="#d7d0d1" />
-                            ))}
-                          </List.Item.Detail.Metadata.TagList>
-                          {label && (
-                            <List.Item.Detail.Metadata.TagList title="Label">
-                              <List.Item.Detail.Metadata.TagList.Item text={label} color="#d7d0d1" />
-                            </List.Item.Detail.Metadata.TagList>
-                          )}
-                          <List.Item.Detail.Metadata.TagList title="Category">
-                            <List.Item.Detail.Metadata.TagList.Item text={capitalCase(sectionKey)} color="#8da0cb" />
-                          </List.Item.Detail.Metadata.TagList>
-                          {subcategory && (
-                            <List.Item.Detail.Metadata.TagList title="Subcategory">
-                              <List.Item.Detail.Metadata.TagList.Item text={capitalCase(subcategory)} color="#fc8d62" />
-                            </List.Item.Detail.Metadata.TagList>
-                          )}
-                          <List.Item.Detail.Metadata.Label title="File" text={filePath} />
-                        </List.Item.Detail.Metadata>
-                      }
-                    />
-                  }
-                  actions={
-                    <ActionPanel>
-                      {!form && (
-                        <>
-                          <Action
-                            icon={Icon.Desktop}
-                            title={`Paste to ${application?.name}`}
-                            onAction={() => Clipboard.paste(replace)}
-                          />
-
-                          <Action.CopyToClipboard title="Copy Content" content={replace} />
-                        </>
-                      )}
-                      <Action.CopyToClipboard title="Copy Triggers" content={triggers.join(", ")} />
-                      {label && <Action.CopyToClipboard title="Copy Label" content={label} />}
-                      <Action.OpenWith path={filePath} />
-                      <Action.ShowInFinder path={filePath} />
-                      <Action.Trash title="Move the Whole File to Trash" paths={filePath} />
-                    </ActionPanel>
-                  }
-                />
-              );
-            })}
+            {sortedItems.map((match, index) => (
+              <MatchItem key={match.filePath + index} match={match} sectionKey={sectionKey} application={application} />
+            ))}
           </List.Section>
         );
       })}

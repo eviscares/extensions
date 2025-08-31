@@ -16,6 +16,68 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.2.1
+
+- Fix compiled file to actually make `useSQL` and `executeSQL` work on Windows.
+
+### v2.2.0
+
+- Make `useSQL` and `executeSQL` work on Windows.
+
+### v2.1.1
+
+- Fix the default size of `getFavicon`.
+
+### v2.1.0
+
+- `getFavicon` will now respect the user's setting for the favicon provider. Note that the `Apple` provider isn't supported since it relies on a native API.
+
+### v2.0.1
+
+- Fix types for ESM extensions
+
+### v2.0.0
+
+- The library can now be tree-shaken, reducing its size considerably.
+- When using `usePromise` and mutating the data with an optimistic update before it is fetched, the current fetch will be aborted to avoid a race condition.
+- Add a new [`runPowerShellScript`](./functions/runPowerShellScript.md) function.
+
+### v1.19.1
+
+- Fixed an issue where arguments weren't passed to `withCache`.
+
+### v1.19.0
+
+- Add a new [`withCache`](./functions/withCache.md) function.
+
+### v1.18.1
+
+- Fixed an issue where setting `timeout` to `0` in `runAppleScript` would not work.
+
+### v1.18.0
+
+- Add a new [`executeSQL](./functions/executeSQL.md) function.
+
+### v1.17.0
+
+- Add a new [`createDeeplink`](./functions/createDeeplink.md) function.
+
+### v1.16.5
+
+- Fixed the bug where `failureToastOptions` did not apply for `useExec` and `useStreamJSON` hooks.
+
+### v1.16.4
+
+- Avoid throwing an error when `useFetch` can't parse the `Content-Type` header of the response.
+
+### v1.16.3
+
+- Fix an issue where `URLSearchParams` couldn't be passed as an option to `useFetch` or `useCachedPromise`, causing extensions to crash.
+
+### v1.16.2
+
+- Fixed the refresh token flow to log out the user instead of throwing an error.
+
 ### v1.16.1
 
 - Fixed an issue where `bodyEncoding` wasn't properly used in OAuthService.
@@ -26,11 +88,11 @@ npm install --save @raycast/utils
 
 ### v1.15.0
 
-- Add `useLocalStorage` hook.
+- Add [`useLocalStorage`](./react-hooks/useLocalStorage.md) hook.
 
 ### v1.14.0
 
-- Add `useStreamJSON` hook.
+- Add [`useStreamJSON`](./react-hooks/useStreamJSON.md) hook.
 
 ### v1.13.6
 

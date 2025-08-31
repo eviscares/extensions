@@ -1,5 +1,16 @@
 # IP Geolocation Changelog
 
+## [New Icon Style] - 2025-07-16
+
+- Optimize extension icons for macOS Tahoe
+
+## [Fix Auto Close Window] - 2024-08-12
+
+- Fix the problem that the Raycast window is automatically closed when the Copy IP command is refreshed in the background.
+- Refactor the code to simplify the logic and improve the performance
+- Remove the time display for the time zone
+- Update icons and styles
+
 ## [Fix Hotkey Error] - 2024-05-27
 
 -  Fix the problem of using hotkeys to invoke commands

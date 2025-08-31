@@ -1,6 +1,7 @@
 import { Application } from "@raycast/api";
 
 export interface ProjectEntry {
+  id: string;
   name: string;
   rootPath: string;
   tags: string[];
@@ -19,4 +20,5 @@ export interface Preferences {
   gitClientApp: Application;
   vscodeApp: Application;
   hideProjectsWithoutTag: boolean;
+  hideProjectsNotEnabled: boolean;
 }
